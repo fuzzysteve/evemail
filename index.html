@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Fuzzwork EveMail</title>
+<meta charset="utf-8"/>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<link href="//ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="xdr.js"></script>
+<script src="//cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="//cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="evemail.css">
+
+<script src="evemail.js"></script>
+<meta http-equiv="cleartype" content="on">
+</head>
+<body>
+<div id="menuBar">
+    <p>Token expires in <input size=5 id="expiresTime" disabled> <button onclick='reply();' style="display:none" id="replybutton">Reply</button> <button onclick='newMail();' style="display:none" id="newmailbutton">New Mail</button>
+</div>
+<div id="login-window">
+<a href="#" id="login">Login to Start Reading and sending email</a>
+</div>
+<div id="faq">
+    <dl>
+        <dt>What's this site for?</dt>
+        <dd>This is a site where you can look at your evemail from outside of the game, and send evemails.</dd>
+        <dt>Doesn't this mean that you can read my mail?</dt>
+        <dd>Nope :) I'm using the implicit flow version, and handling <em>everything</em> in javascript. I see next to nothing. Just the bare minimum to work. And I don't store any of it. Your mail never hits my server</dd>
+        <dt>I don't trust you.</dt>
+        <dd>Your greatest protection here is that I just <em>don't care</em> what's in your mail. Also, by telling you I'm not reading it, if I then did, I'm breaching the terms of the Developer's license, and CCP would do bad things to me for that</dd>
+        <dt>Anything else I should know?</dt>
+        <dd>Because I'm using the implicit flow, there's a 20 minute limit on the duration of the tokens involved. So if you go more than 20 minutes, you'll have to log in again. Nothing I can do about that. In addition, due to a limit on the way the auth works, at the moment, I can't retrieve who you are. so you'll have to tell me.</dd>
+    </dl>
+</div>
+<div id="playerId" style="display:none">
+    <label for="charname">Character Name</label>  <input type=text placeholder="Character name here" id=charname>  <button class="find" onclick="findUser();">Find Character</button>
+</div>
+
+
+<div id="mailHeaders" style="display:none">
+    <table id="mailHeadersTable" class="hover compact row-border">
+        <thead>
+            <tr><th>From</th><th>Subject</th><th>Timestamp</th></tr>
+        </thead>
+    </table>
+</div>
+<div id="mailBody" style="display:none;height:50%">
+
+</div>
+
+
+
+
+
+
+<div id="UserNameSelect" style="display:none">
+    <p>Please select your character</p>
+    <select id="userid">
+    </select>
+    <button onclick="selectUser();">Select Character</button>
+</div>
+
+<div id="mailentry"  style="display:none">
+    <p>Recipients: <span id="recipients"></span></p>
+    <p>Subject<input size=60 id="mailentrysubject" placeholder="Subject"><br>
+    <textarea id="mailentrytext" placeholder="Enter your mail here" rows=20 cols=60></textarea>
+    <p>Be aware, for the moment, you cannot send to people with CSPA charges. Mails to them will fail.<p>
+    <button onclick="sendMail();">Send Mail</button>
+    <button onclick="cancelSendMail();">Cancel</button>
+</div>
+
+
+</body>
+</html>
