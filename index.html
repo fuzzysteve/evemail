@@ -17,7 +17,7 @@
 </head>
 <body>
 <div id="menuBar">
-    <p>Token expires in <input size=5 id="expiresTime" disabled> <button onclick='reply();' style="display:none" id="replybutton">Reply</button> <button onclick='newMail();' style="display:none" id="newmailbutton">New Mail</button>
+    Token expires in <input size=5 id="expiresTime" disabled> <button onclick="refresh();">Refresh</button> <button onclick='reply();' style="display:none" id="replybutton">Reply</button> <button onclick='newMail();' style="display:none" id="newmailbutton">New Mail</button>
 </div>
 <div id="login-window">
 <a href="#" id="login">Login to Start Reading and sending email</a>
@@ -39,7 +39,7 @@
 <div id="mailHeaders" style="display:none">
     <table id="mailHeadersTable" class="hover compact row-border">
         <thead>
-            <tr><th>From</th><th>Subject</th><th>Timestamp</th></tr>
+            <tr><th>From</th><th>Subject</th><th>Timestamp</th><th>Labels</th></tr>
         </thead>
     </table>
 </div>

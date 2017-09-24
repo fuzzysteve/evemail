@@ -18,6 +18,8 @@ var countdown={};
 var currentmail={};
 var recipient='';
 var recipient_type='character';
+var labels={};
+var mailingLists={};
 
     // Configuration parameters
     var redirectUri = "https://evemail.fuzzwork.co.uk/";
@@ -215,8 +217,31 @@ var recipient_type='character';
         return characterlist;
     }
 
+
+    function refresh() {
+        mailtable=$('#mailHeadersTable').DataTable();
+        mailtable.clear();
+        selectUser();
+    }
+
+
     function selectUser() {
         mailtable=$('#mailHeadersTable').DataTable();
+
+        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/labels/?datasource=tranquility",function(data,status,xhr) {
+            data.labels.forEach(function(element){
+                labels[element.label_id]=element.name;
+            });
+        });
+        
+        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/lists/?datasource=tranquility",function(data,status,xhr) {
+            data.forEach(function(element){
+                mailingLists[element.mailing_list_id]=element.name;
+            });
+        });
+
+
+
         $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/?datasource=tranquility",function(data,status,xhr) {
             idlist=[];
             individualLookup=[];
@@ -236,7 +261,16 @@ var recipient_type='character';
                 singleLookup(individualLookup);
             }
             data.forEach(function(element) {
-                row=mailtable.row.add([characterlist[element.from],element.subject,element.timestamp]).node();
+                if (characterlist[element.from] !== undefined) {
+                    from=characterlist[element.from];
+                } else {
+                    from="Bad ID - "+ element.from;
+                }
+                labeltext='';
+                element.labels.forEach(function(label) {
+                    labeltext+=labels[label]+" ";
+                });
+                row=mailtable.row.add([characterlist[element.from],element.subject,element.timestamp,labeltext]).node();
                 row.dataset.mailid=element.mail_id;
             });
         });
@@ -279,7 +313,7 @@ var recipient_type='character';
                     recipients.push('Corporation');
                 }
                 if (element.recipient_type=='mailing_list'){
-                    recipients.push('Mailing List');
+                    recipients.push('Mailing List- '+mailingLists[element.recipient_id]);
                 }
             });
             currentmail=data;
