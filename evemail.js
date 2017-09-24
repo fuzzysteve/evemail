@@ -315,6 +315,7 @@ var recipient_type='character';
         $("#mailentry").show();
         recipient=currentmail.from;
         recipient_type='character';
+        $("#mailentrysubject").val("RE: "+currentmail.subject);
         $("#recipients").text(characterlist[currentmail.from]);
     }
 
@@ -336,7 +337,7 @@ var recipient_type='character';
         $("#mailentry").hide();
         $("#mailentrytext").val('');
         $("#mailentrysubject").val('');
-        },error:function(jqXHR,status,error){ alert("Error thrown. -"+status);},      
+        },error:function(jqXHR,status,error){ alert("Error thrown. - "+status);},      
         method:"POST",processData:false,contentType: 'application/json',async:false});
 
 
