@@ -144,6 +144,10 @@ var recipient_type='character';
                 return;
             }
 
+            $.getJSON("https://esi.tech.ccp.is/verify/",function(data,status,xhr){ characterId=data.CharacterID; });
+
+
+
             // Restore hash.
             window.location.hash = $.cookie(hashTokenName);
 
@@ -155,7 +159,6 @@ var recipient_type='character';
             $("#login-window").hide();
             $("#menuBar").show();
             $("#faq").hide();
-            $("#playerId").show();
             $('#mailHeadersTable').DataTable({
               "paging": false,
               "scrollY": "40%",
@@ -167,6 +170,7 @@ var recipient_type='character';
               "sDom": 'C<"clear">lfrtip',
               "order":[[2,"desc"]]
             });
+            selectUser();
 
         } else {
         }
@@ -174,19 +178,6 @@ var recipient_type='character';
         loginSetup(token);
     });
 
-    function findUser() {
-        charstring=encodeURIComponent($("#charname").val());
-        $.getJSON("https://esi.tech.ccp.is/latest/search/?categories=character&search="+charstring,function(data,status,xhr) {
-            characters=characterLookup(data.character);
-            for (var key in characters){
-                $('#userid').append("<option value='"+key+"'>"+characters[key]+"</option>");
-            }
-
-        });
-        $("#playerId").hide();
-        $("#UserNameSelect").show();
-
-    }
 
     function onlyUnique(value, index, self) { 
         return self.indexOf(value) === index;
@@ -225,7 +216,6 @@ var recipient_type='character';
     }
 
     function selectUser() {
-        characterId=$('#userid').val();
         mailtable=$('#mailHeadersTable').DataTable();
         $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/?datasource=tranquility",function(data,status,xhr) {
             idlist=[];

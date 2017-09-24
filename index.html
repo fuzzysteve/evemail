@@ -31,11 +31,8 @@
         <dt>I don't trust you.</dt>
         <dd>Your greatest protection here is that I just <em>don't care</em> what's in your mail. Also, by telling you I'm not reading it, if I then did, I'm breaching the terms of the Developer's license, and CCP would do bad things to me for that</dd>
         <dt>Anything else I should know?</dt>
-        <dd>Because I'm using the implicit flow, there's a 20 minute limit on the duration of the tokens involved. So if you go more than 20 minutes, you'll have to log in again. Nothing I can do about that. In addition, due to a limit on the way the auth works, at the moment, I can't retrieve who you are. so you'll have to tell me.</dd>
+        <dd>Because I'm using the implicit flow, there's a 20 minute limit on the duration of the tokens involved. So if you go more than 20 minutes, you'll have to log in again. Nothing I can do about that.</dd>
     </dl>
-</div>
-<div id="playerId" style="display:none">
-    <label for="charname">Character Name</label>  <input type=text placeholder="Character name here" id=charname>  <button class="find" onclick="findUser();">Find Character</button>
 </div>
 
 
@@ -55,12 +52,6 @@
 
 
 
-<div id="UserNameSelect" style="display:none">
-    <p>Please select your character</p>
-    <select id="userid">
-    </select>
-    <button onclick="selectUser();">Select Character</button>
-</div>
 
 <div id="mailentry"  style="display:none">
     <p>Recipients: <span id="recipients"></span></p>
