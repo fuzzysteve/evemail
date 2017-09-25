@@ -43,6 +43,7 @@ li {
     height:40%;
     width:90%;
     overflow-y: scroll;
+    cursor:pointer;
 
 }
 
