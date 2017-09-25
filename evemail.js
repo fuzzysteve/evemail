@@ -373,6 +373,7 @@ var mailingLists={};
         $("#mailentrytext").val('');
         $("#mailentrysubject").val('');
         $("#mailentry").hide();
+        $("#recipientSelection").hide();
     }
 
 
