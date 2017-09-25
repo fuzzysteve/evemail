@@ -55,11 +55,20 @@
 
 <div id="mailentry"  style="display:none">
     <p>Recipients: <span id="recipients"></span></p>
+    <button id="addRecipient" onclick="addRecipient();" style="display:none">Add Recipient</button>
     <p>Subject<input size=60 id="mailentrysubject" placeholder="Subject"><br>
     <textarea id="mailentrytext" placeholder="Enter your mail here" rows=20 cols=60></textarea>
     <p>Be aware, for the moment, you cannot send to people with CSPA charges. Mails to them will fail.<p>
     <button onclick="sendMail();">Send Mail</button>
     <button onclick="cancelSendMail();">Cancel</button>
+</div>
+
+<div id="recipientSelection" style="display:none">
+    <label for="nameFragment">Recipient</label><input id="nameFragment" size=60><br>
+    <button onclick="findRecipient();">Find Recipient</button><br>
+    <select id="selectRecipient" style="display:none">
+    </select>
+    <button id="addRecipientButton" onclick="addRecipientToList();" style="display:none">Add Recipient</button>
 </div>
 
 

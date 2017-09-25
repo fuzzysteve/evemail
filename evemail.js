@@ -16,8 +16,7 @@ var expires=0;
 var sanitizer = {};
 var countdown={};
 var currentmail={};
-var recipient='';
-var recipient_type='character';
+var mailrecipients=[];
 var labels={};
 var mailingLists={};
 
@@ -279,8 +278,7 @@ var mailingLists={};
         $('#mailHeadersTable tbody').on('click','tr',function (){
             displayMail($(this)[0].dataset.mailid);
         });
-        $("#UserNameSelect").hide();
-//        $("#newmailbutton").show();
+        $("#newmailbutton").show();
 
     }
 
@@ -337,21 +335,25 @@ var mailingLists={};
 
     function reply() {  
         $("#mailentry").show();
-        recipient=currentmail.from;
-        recipient_type='character';
+        mailrecipients=[];
+        mailrecipients[0]={};
+        mailrecipients[0].recipient_id=currentmail.from;
+        mailrecipients[0].recipient_type='character';
         $("#mailentrysubject").val("RE: "+currentmail.subject);
         $("#recipients").text(characterlist[currentmail.from]);
     }
 
     function sendMail() {
 
+        if (mailrecipients.length===0){
+            alert("pick someone to send to");
+            return;
+        }
+
         data={};
         data.approved_cost=0;
         data.body=$('#mailentrytext').val();
-        data.recipients=[];
-        data.recipients[0]={};
-        data.recipients[0].recipient_id=recipient;
-        data.recipients[0].recipient_type=recipient_type;
+        data.recipients=mailrecipients;
         data.subject=$('#mailentrysubject').val();
 
 
@@ -371,4 +373,52 @@ var mailingLists={};
         $("#mailentrytext").val('');
         $("#mailentrysubject").val('');
         $("#mailentry").hide();
+    }
+
+
+    function newMail() {
+        $("#mailentry").show();
+        mailrecipients=[];
+        $("#mailentrytext").val('');
+        $("#mailentrysubject").val('');
+        $("#recipients").text('');
+        $('#addRecipient').show();
+    }
+
+    function addRecipient() {
+        $("#recipientSelection").show();
+    }
+
+    function findRecipient() {
+        charstring=encodeURIComponent($("#nameFragment").val());
+        $.getJSON("https://esi.tech.ccp.is/latest/search/?categories=character&search="+charstring,function(data,status,xhr) {
+            singleLookup(data.character);
+            data.character.forEach(function(element) {
+                $('#selectRecipient').append("<option value='"+element+"'>"+characterlist[element]+"</option>");
+            });
+            $("#selectRecipient").show();
+            $("#addRecipientButton").show();
+
+        });
+    }
+
+    function addRecipientToList() {
+        recipientid=$('#selectRecipient').val();
+        mailrecipients.forEach(function(element) {
+            if (recipientid == element.recipient_id) {
+                return;
+            }
+        });
+
+        mailrecipients.push({recipient_id:recipientid,recipient_type:'character'});
+        updateRecipientDisplay();
+        $("#recipientSelection").hide();
+    }
+
+    function updateRecipientDisplay() {
+        $("#recipients").text('');
+        $("#recipients").append("<ul></ul>");
+        mailrecipients.forEach(function(element) {
+            $("#recipients ul").append("<li>"+characterlist[element.recipient_id]+"</li>");
+        });
     }
