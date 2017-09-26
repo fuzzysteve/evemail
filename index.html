@@ -13,6 +13,53 @@
 <link rel="stylesheet" href="evemail.css">
 
 <script src="evemail.js"></script>
+
+<script src='/tinymce/js/tinymce/tinymce.min.js'></script>
+
+
+<script>
+tinymce.init({
+  selector: "#mailentrytext",
+  formats: {
+    bold: {inline: 'b'},
+    italic: {inline: 'i'},
+    underline: {inline:'u'},
+    forecolor: {inline : 'font', attributes : {color : '%value'}},
+  },
+  plugins: "textcolor link",
+  toolbar: "bold italic underline link forecolor removeformat",
+  branding: false,
+  textcolor_map : [
+    "ffff00","Yellow",
+    "ffffff","White",
+    "ff0000","Red",
+    "0000ff","Blue",
+    "4c4c4c","Grey",
+    "000000","Black",
+    "b2b2b2","Light Grey",
+    "00ff00","Green",
+    "7f7f00", "Dark Yellow",
+    "007f00","Dark Green",
+    "7f0000","Dark Red",
+    "00007f","Dark Blue",
+    "7f007f","Magenta",
+    "00ffff","Cyan",
+    "ff00ff","Pink",
+    "007fff","Light Blue"],
+  textcolor_rows: "4",
+  textcolor_cols: "4",
+  menubar:false,
+  statusbar:false,
+  valid_elements: "b,i,u,b/strong,i/em,br,font[color|size],a[href]",
+  forced_root_block: false,
+  convert_fonts_to_spans : false,
+  cleanup : false,
+  content_css : '/evemailEditor.css'
+});
+
+</script>
+
+
 <meta http-equiv="cleartype" content="on">
 </head>
 <body>

@@ -329,6 +329,7 @@ var mailingLists={};
 
 
         });
+        $("#mailBody font[color]").css('color',function() {if ($(this).attr('color') !== undefined) {return "#"+$(this).attr('color').substr(3,6);}});
         $("#mailBody").show();
         $("#replybutton").show();
     }
@@ -341,6 +342,7 @@ var mailingLists={};
         mailrecipients[0].recipient_type='character';
         $("#mailentrysubject").val("RE: "+currentmail.subject);
         $("#recipients").text(characterlist[currentmail.from]);
+        tinymce.activeEditor.setContent('');
     }
 
     function sendMail() {
@@ -352,7 +354,10 @@ var mailingLists={};
 
         data={};
         data.approved_cost=0;
-        data.body=$('#mailentrytext').val();
+        mailtext=tinymce.activeEditor.getContent();
+        mailtext=mailtext.replace(/<br \/>/g,'<br>');
+        mailtext=mailtext.replace(/<font color="#/g,'<font color="#ff');
+        data.body=mailtext;
         data.recipients=mailrecipients;
         data.subject=$('#mailentrysubject').val();
 
@@ -384,6 +389,7 @@ var mailingLists={};
         $("#mailentrysubject").val('');
         $("#recipients").text('');
         $('#addRecipient').show();
+        tinymce.activeEditor.setContent('');
     }
 
     function addRecipient() {
