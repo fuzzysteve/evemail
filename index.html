@@ -49,6 +49,7 @@ tinymce.init({
   textcolor_rows: "4",
   textcolor_cols: "4",
   menubar:false,
+  height:"60%",
   statusbar:false,
   valid_elements: "b,i,u,b/strong,i/em,br,font[color|size],a[href]",
   forced_root_block: false,
@@ -104,6 +105,7 @@ tinymce.init({
     <p>Recipients: <span id="recipients"></span></p>
     <button id="addRecipient" onclick="addRecipient();" style="display:none">Add Recipient</button>
     <p>Subject<input size=60 id="mailentrysubject" placeholder="Subject"><br>
+    <br>
     <textarea id="mailentrytext" placeholder="Enter your mail here" rows=20 cols=60></textarea>
     <p>Be aware, for the moment, you cannot send to people with CSPA charges. Mails to them will fail.<p>
     <button onclick="sendMail();">Send Mail</button>
