@@ -421,6 +421,8 @@ var mailingLists={};
         updateRecipientDisplay();
         $("#recipientSelection").hide();
         $('#selectRecipient').empty();
+        $('#selectRecipient').hide();
+        $("#addRecipientButton").hide();
     }
 
     function updateRecipientDisplay() {
