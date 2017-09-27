@@ -420,6 +420,7 @@ var mailingLists={};
         mailrecipients.push({recipient_id:recipientid,recipient_type:'character'});
         updateRecipientDisplay();
         $("#recipientSelection").hide();
+        $('#selectRecipient').empty();
     }
 
     function updateRecipientDisplay() {
