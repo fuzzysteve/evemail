@@ -19,6 +19,7 @@ var currentmail={};
 var mailrecipients=[];
 var labels={};
 var mailingLists={};
+var lowestMailId=Infinity;
 
     // Configuration parameters
     var redirectUri = "https://evemail.fuzzwork.co.uk/";
@@ -223,25 +224,20 @@ var mailingLists={};
         selectUser();
     }
 
+    function loadMore() {
+        loadPage(lowestMailId);
+    }
 
-    function selectUser() {
+    function loadPage(last_mail_id) {
         mailtable=$('#mailHeadersTable').DataTable();
 
-        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/labels/?datasource=tranquility",function(data,status,xhr) {
-            data.labels.forEach(function(element){
-                labels[element.label_id]=element.name;
-            });
-        });
-        
-        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/lists/?datasource=tranquility",function(data,status,xhr) {
-            data.forEach(function(element){
-                mailingLists[element.mailing_list_id]=element.name;
-            });
-        });
+        lastid="";
 
+        if (last_mail_id !== 0) {
+            lastid="&last_mail_id="+last_mail_id;
+        }
 
-
-        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/?datasource=tranquility",function(data,status,xhr) {
+        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/?datasource=tranquility"+lastid,function(data,status,xhr) {
             idlist=[];
             individualLookup=[];
             data.forEach(function(element) {
@@ -260,6 +256,7 @@ var mailingLists={};
                 singleLookup(individualLookup);
             }
             data.forEach(function(element) {
+                from='';
                 if (characterlist[element.from] !== undefined) {
                     from=characterlist[element.from];
                 } else {
@@ -269,10 +266,41 @@ var mailingLists={};
                 element.labels.forEach(function(label) {
                     labeltext+=labels[label]+" ";
                 });
-                row=mailtable.row.add([characterlist[element.from],element.subject,element.timestamp,labeltext]).node();
+                if (element.recipients[0].recipient_type=='mailing_list') {
+                    labeltext="Mailing list - "+mailingLists[element.recipients[0].recipient_id]+" "+labeltext;
+                }
+                row=mailtable.row.add([from,element.subject,element.timestamp,labeltext]).node();
                 row.dataset.mailid=element.mail_id;
+                if (element.mail_id<lowestMailId) {
+                    lowestMailId=element.mail_id;
+                }
+                if (element.is_read === undefined){
+                    $(row).addClass('unread');
+                }
             });
         });
+
+
+    }
+
+
+    function selectUser() {
+        mailtable=$('#mailHeadersTable').DataTable();
+
+        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/labels/?datasource=tranquility",function(data,status,xhr) {
+            data.labels.forEach(function(element){
+                labels[element.label_id]=element.name;
+            });
+        });
+        
+        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/lists/?datasource=tranquility",function(data,status,xhr) {
+            data.forEach(function(element){
+                mailingLists[element.mailing_list_id]=element.name;
+                characterlist[element.mailing_list_id]=element.name;
+            });
+        });
+
+        loadPage(0);
         $("#mailHeaders").show();
         mailtable.draw();
         $('#mailHeadersTable tbody').on('click','tr',function (){
