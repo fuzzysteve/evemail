@@ -22,7 +22,7 @@ var mailingLists={};
 var lowestMailId=Infinity;
 String.prototype.cleanup = function() {
        return this.toLowerCase().replace(/[^a-zA-Z0-9]+/g, "-");
-}
+};
     // Configuration parameters
     var redirectUri = "https://evemail.fuzzwork.co.uk/";
     var clientId = "98962eb6193047999a9ba0b12ded7aec"; // OAuth client id
@@ -284,7 +284,8 @@ String.prototype.cleanup = function() {
                 });
                 if (element.recipients[0].recipient_type=='mailing_list') {
                     $(row).addClass("label-ml-"+mailingLists[element.recipients[0].recipient_id].cleanup());
-                };
+                }
+                $(row).addClass('mailrow');
             });
         });
 
@@ -315,6 +316,7 @@ String.prototype.cleanup = function() {
             displayMail($(this)[0].dataset.mailid);
         });
         $("#newmailbutton").show();
+        $("#filterbutton").show();
 
     }
 
@@ -467,4 +469,28 @@ String.prototype.cleanup = function() {
         mailrecipients.forEach(function(element) {
             $("#recipients ul").append("<li>"+characterlist[element.recipient_id]+"</li>");
         });
+    }
+
+    function showfilter() {
+        $("#filterLabels").show();
+        labelselect=$("#hidelabel");
+        labelselect.empty();
+        for(var lid of Object.keys(labels)) {
+            labelselect.append("<option value='label-"+labels[lid].cleanup()+"'>"+labels[lid]+"</option>");
+        }
+        for(var mlid of Object.keys(mailingLists)) {
+            labelselect.append("<option value='label-ml-"+mailingLists[mlid].cleanup()+"'>"+mailingLists[mlid]+"</option>");
+        }
+    }
+
+    function hideLabel() {
+        $("#filterLabels").hide();
+        hider="."+$("#hidelabel").val();
+        $(hider).hide();
+    }
+    function hideotherLabel() {
+        $("#filterLabels").hide();
+        $(".mailrow").hide();
+        hider="."+$("#hidelabel").val();
+        $(hider).show();
     }

@@ -76,7 +76,22 @@ li {
     top:25%;
 }
 
+#filterLabels {
+    background:black;
+     border:1px solid grey;
+     margin:1em;
+     padding:1em;
+     position:absolute;
+     z-index:10;
+     left:15%;
+     top:25%;
+ }
 
+
+.unread {
+    background-color:#818181 !important;
+
+}
 
 
 

@@ -65,7 +65,10 @@ tinymce.init({
 </head>
 <body>
 <div id="menuBar">
-    Token expires in <input size=5 id="expiresTime" disabled> <button onclick="refresh();">Refresh</button> <button onclick='reply();' style="display:none" id="replybutton">Reply</button> <button onclick='newMail();' style="display:none" id="newmailbutton">New Mail</button><button onclick="loadMore();">Load More Mail</button>
+    Token expires in <input size=5 id="expiresTime" disabled> <button onclick="refresh();">Refresh</button> <button onclick='reply();' style="display:none" id="replybutton">Reply</button>
+    <button onclick='newMail();' style="display:none" id="newmailbutton">New Mail</button>
+    <button onclick="loadMore();">Load More Mail</button>
+    <button style="display:none" id="filterbutton" onclick="showfilter();">Show Filter Box</button>
 </div>
 <div id="login-window">
 <a href="#" id="login">Login to Start Reading and sending email</a>
@@ -120,6 +123,10 @@ tinymce.init({
     <button id="addRecipientButton" onclick="addRecipientToList();" style="display:none">Add Recipient</button>
 </div>
 
+<div id="filterLabels" style="display:none">
+    <select id="hidelabel"></select><br><button onclick="hideLabel();">Hide Label</button>
+    <button onclick="hideotherLabel();">Hide All Other Labels</button><br>
+</div>
 
 </body>
 </html>
