@@ -20,7 +20,9 @@ var mailrecipients=[];
 var labels={};
 var mailingLists={};
 var lowestMailId=Infinity;
-
+String.prototype.cleanup = function() {
+       return this.toLowerCase().replace(/[^a-zA-Z0-9]+/g, "-");
+}
     // Configuration parameters
     var redirectUri = "https://evemail.fuzzwork.co.uk/";
     var clientId = "98962eb6193047999a9ba0b12ded7aec"; // OAuth client id
@@ -277,6 +279,12 @@ var lowestMailId=Infinity;
                 if (element.is_read === undefined){
                     $(row).addClass('unread');
                 }
+                element.labels.forEach(function(label) {
+                    $(row).addClass("label-"+labels[label].cleanup());
+                });
+                if (element.recipients[0].recipient_type=='mailing_list') {
+                    $(row).addClass("label-ml-"+mailingLists[element.recipients[0].recipient_id].cleanup());
+                };
             });
         });
 
