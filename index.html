@@ -78,11 +78,11 @@ tinymce.init({
         <dt>What's this site for?</dt>
         <dd>This is a site where you can look at your evemail from outside of the game, and send evemails.</dd>
         <dt>Doesn't this mean that you can read my mail?</dt>
-        <dd>Nope :) I'm using the implicit flow version, and handling <em>everything</em> in javascript. I see next to nothing. Just the bare minimum to work. And I don't store any of it. Your mail never hits my server</dd>
+        <dd>Nope :) I'm using the OAuth Authorization Code (PKCE) flow, and handling <em>everything</em> in javascript, right here in your browser. I see next to nothing. Just the bare minimum to work. And I don't store any of it. Your mail never hits my server</dd>
         <dt>I don't trust you.</dt>
         <dd>Your greatest protection here is that I just <em>don't care</em> what's in your mail. Also, by telling you I'm not reading it, if I then did, I'm breaching the terms of the Developer's license, and CCP would do bad things to me for that</dd>
         <dt>Anything else I should know?</dt>
-        <dd>Because I'm using the implicit flow, there's a 20 minute limit on the duration of the tokens involved. So if you go more than 20 minutes, you'll have to log in again. Nothing I can do about that.</dd>
+        <dd>The access token only lasts about 20 minutes, and this site doesn't hang on to the longer-lived refresh token, so if you go more than 20 minutes you'll have to log in again. Nothing I can do about that.</dd>
     </dl>
 </div>
 

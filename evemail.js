@@ -28,7 +28,16 @@ String.prototype.cleanup = function() {
     var clientId = "98962eb6193047999a9ba0b12ded7aec"; // OAuth client id
     var csrfTokenName = clientId + "csrftoken";
     var hashTokenName = clientId + "hash";
+    var verifierTokenName = clientId + "verifier";
     var scopes = "esi-mail.read_mail.v1 esi-mail.send_mail.v1";
+    var authorizeEndpoint = "https://login.eveonline.com/v2/oauth/authorize";
+    var tokenEndpoint = "https://login.eveonline.com/v2/oauth/token";
+
+    // ESI's behaviour flips to a new compatibility date at 11:00 UTC, so back off
+    // 11h before taking today's date, rather than using the naive UTC date.
+    function compatibilityDate() {
+        return new Date(Date.now() - 11*60*60*1000).toISOString().slice(0,10);
+    }
 
     (function($) {
     function trimAttributes(node) {
@@ -67,7 +76,8 @@ String.prototype.cleanup = function() {
         $("#data").children().replaceWith("<span>" + error + "</span>");
     }
 
-    // Send Oauth token request on login, reset ajax Authorization header on logout.
+    // Send Oauth authorization request on login (Authorization Code + PKCE flow),
+    // reset ajax Authorization header on logout.
     function onClickLogin(evt) {
         evt.preventDefault();
         var command = $("#login").text();
@@ -78,13 +88,19 @@ String.prototype.cleanup = function() {
             $.cookie(csrfTokenName, csrfToken);
             $.cookie(hashTokenName, window.location.hash);
 
-            // No OAuth token, request one from the OAuth authentication endpoint
-            window.location =  "https://login.eveonline.com/oauth/authorize/" +
-                "?response_type=token" +
-                "&client_id=" + clientId +
-                "&scope=" + scopes +
-                "&redirect_uri=" + redirectUri +
-                "&state=" + csrfToken;
+            generatePkce().then(function(pkce) {
+                $.cookie(verifierTokenName, pkce.verifier);
+
+                // No OAuth code yet, request one from the OAuth authorization endpoint
+                window.location = authorizeEndpoint +
+                    "?response_type=code" +
+                    "&client_id=" + clientId +
+                    "&scope=" + encodeURIComponent(scopes) +
+                    "&redirect_uri=" + encodeURIComponent(redirectUri) +
+                    "&state=" + csrfToken +
+                    "&code_challenge=" + pkce.challenge +
+                    "&code_challenge_method=S256";
+            });
 
         } else {
             ajaxSetup(false);
@@ -92,7 +108,7 @@ String.prototype.cleanup = function() {
         }
     }
 
-    // Extract value from oauth formatted hash fragment.
+    // Extract value from an oauth formatted hash fragment or query string.
     function extractFromHash(name, hash) {
         var match = hash.match(new RegExp(name + "=([^&]+)"));
         return !!match && match[1];
@@ -106,13 +122,66 @@ String.prototype.cleanup = function() {
         });
     }
 
+    // Base64url-encode an ArrayBuffer, no padding (RFC 4648 §5).
+    function base64UrlEncode(buffer) {
+        var bytes = new Uint8Array(buffer);
+        var binary = '';
+        for (var i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function base64UrlDecode(str) {
+        str = str.replace(/-/g, '+').replace(/_/g, '/');
+        while (str.length % 4) { str += '='; }
+        return decodeURIComponent(atob(str).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+    }
+
+    // Decode a JWT's payload without verifying its signature - only used to read
+    // the character id/name out of a token we just received directly from CCP's
+    // token endpoint over TLS.
+    function decodeJwt(token) {
+        return JSON.parse(base64UrlDecode(token.split('.')[1]));
+    }
+
+    // Generate a PKCE code_verifier/code_challenge pair (RFC 7636).
+    function generatePkce() {
+        var randomBytes = new Uint8Array(32);
+        window.crypto.getRandomValues(randomBytes);
+        var verifier = base64UrlEncode(randomBytes.buffer);
+        var encoder = new TextEncoder();
+        return window.crypto.subtle.digest('SHA-256', encoder.encode(verifier)).then(function(hash) {
+            return {verifier: verifier, challenge: base64UrlEncode(hash)};
+        });
+    }
+
+    // Exchange an authorization code for an access token. Public client (no
+    // secret) - authenticated with the PKCE code_verifier instead.
+    function exchangeCodeForToken(code, verifier) {
+        return $.ajax({
+            url: tokenEndpoint,
+            method: "POST",
+            data: {
+                grant_type: "authorization_code",
+                code: code,
+                client_id: clientId,
+                code_verifier: verifier
+            },
+            dataType: "json"
+        });
+    }
+
     function ajaxSetup(token) {
         var headers = {
-            "Accept": "application/json, charset=utf-8"
+            "Accept": "application/json, charset=utf-8",
+            "X-Compatibility-Date": compatibilityDate()
         };
         if (token) {
             headers.Authorization = "Bearer " + token;
-            headers['X-User-Agent'] = "evemail.fuzzwork.co.uk";
+            headers['X-User-Agent'] = "evemail.fuzzwork.co.uk +https://evemail.fuzzwork.co.uk/";
         }
         $.ajaxSetup({
             accepts: "application/json, charset=utf-8",
@@ -133,53 +202,63 @@ String.prototype.cleanup = function() {
 
     $(document).ready(function() {
 
-        var hash = window.location.hash;
-        var token = extractFromHash("access_token", hash);
-        expires=Date.now()+1200000;
+        var query = window.location.search;
+        var code = extractFromHash("code", query);
         $("#mailHeaders").hide();
         $("#mailBody").hide();
         $("#menuBar").hide();
 
-        if (token) {
-            ajaxSetup(token);
+        if (code) {
             // Check CSRF token in state matches token saved in cookie
-            if(extractFromHash("state", hash) !== $.cookie(csrfTokenName)) {
+            if(extractFromHash("state", query) !== $.cookie(csrfTokenName)) {
                 displayError("CSRF token mismatch");
                 return;
             }
 
-            $.getJSON("https://esi.tech.ccp.is/verify/",function(data,status,xhr){ characterId=data.CharacterID; });
+            var verifier = $.cookie(verifierTokenName);
+            exchangeCodeForToken(code, verifier).done(function(data) {
+                var token = data.access_token;
+                expires = Date.now() + (data.expires_in * 1000);
+                ajaxSetup(token);
 
+                var claims = decodeJwt(token);
+                characterId = parseInt(claims.sub.split(':')[2], 10);
+                characterName = claims.name;
 
+                // Strip the ?code=&state= from the URL, then restore the original hash.
+                window.history.replaceState(null, '', redirectUri);
+                window.location.hash = $.cookie(hashTokenName);
 
-            // Restore hash.
-            window.location.hash = $.cookie(hashTokenName);
+                // Delete cookies.
+                $.cookie(csrfTokenName, null);
+                $.cookie(hashTokenName, null);
+                $.cookie(verifierTokenName, null);
+                countdown = setInterval(function() { $('#expiresTime').val(Math.floor((expires-Date.now())/1000));},1000);
 
-            // Delete cookies.
-            $.cookie(csrfTokenName, null);
-            $.cookie(hashTokenName, null);
-            countdown = setInterval(function() { $('#expiresTime').val(Math.floor((expires-Date.now())/1000));},1000);
-
-            $("#login-window").hide();
-            $("#menuBar").show();
-            $("#faq").hide();
-            $('#mailHeadersTable').DataTable({
-              "paging": false,
-              "scrollY": "40%",
-              "bFilter": false,
-              "bInfo": false,
-              "autoWidth": true,
-              "bSortClasses": false,
-              "bDeferRender": false,
-              "sDom": 'C<"clear">lfrtip',
-              "order":[[2,"desc"]]
+                $("#login-window").hide();
+                $("#menuBar").show();
+                $("#faq").hide();
+                $('#mailHeadersTable').DataTable({
+                  "paging": false,
+                  "scrollY": "40%",
+                  "bFilter": false,
+                  "bInfo": false,
+                  "autoWidth": true,
+                  "bSortClasses": false,
+                  "bDeferRender": false,
+                  "sDom": 'C<"clear">lfrtip',
+                  "order":[[2,"desc"]]
+                });
+                selectUser();
+                loginSetup(token);
+            }).fail(function(xhr, status, error) {
+                displayError("Login failed: " + error);
+                loginSetup(false);
             });
-            selectUser();
 
         } else {
+            loginSetup(false);
         }
-
-        loginSetup(token);
     });
 
 
@@ -193,7 +272,7 @@ String.prototype.cleanup = function() {
         for (o=0,j=characterIds.length; o < j; o+=chunk) {
             temparray = characterIds.slice(o,o+chunk);
             characters=JSON.stringify(temparray.filter(onlyUnique));
-            $.ajax({url:"https://esi.tech.ccp.is/latest/universe/names/?datasource=tranquility",data:characters,success:function(data,status,xhr){
+            $.ajax({url:"https://esi.evetech.net/latest/universe/names/?datasource=tranquility",data:characters,success:function(data,status,xhr){
                   data.forEach(function(element) {
                           characterlist[element.id]=element.name; 
                   });
@@ -205,12 +284,12 @@ String.prototype.cleanup = function() {
         var o,j,temparray,chunk = 5;
         for (o=0,j=characterIds.length; o < j; o+=chunk) {
             temparray = characterIds.slice(o,o+chunk);
-            characters=temparray.filter(onlyUnique).join();
-            $.ajax({url:"https://esi.tech.ccp.is/latest/characters/names/?datasource=tranquility",data:{character_ids:characters},success:function(data,status,xhr){
+            characters=JSON.stringify(temparray.filter(onlyUnique));
+            $.ajax({url:"https://esi.evetech.net/latest/universe/names/?datasource=tranquility",data:characters,success:function(data,status,xhr){
                 data.forEach(function(element) {
-                   characterlist[element.character_id]=element.character_name; 
+                   characterlist[element.id]=element.name; 
                 });
-            },method:"GET",contentType: 'application/json',async:false});
+            },method:"POST",processData:false,contentType: 'application/json',async:false});
         }
     }
 
@@ -239,7 +318,7 @@ String.prototype.cleanup = function() {
             lastid="&last_mail_id="+last_mail_id;
         }
 
-        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/?datasource=tranquility"+lastid,function(data,status,xhr) {
+        $.getJSON("https://esi.evetech.net/latest/characters/"+characterId+"/mail/?datasource=tranquility"+lastid,function(data,status,xhr) {
             idlist=[];
             individualLookup=[];
             data.forEach(function(element) {
@@ -296,13 +375,13 @@ String.prototype.cleanup = function() {
     function selectUser() {
         mailtable=$('#mailHeadersTable').DataTable();
 
-        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/labels/?datasource=tranquility",function(data,status,xhr) {
+        $.getJSON("https://esi.evetech.net/latest/characters/"+characterId+"/mail/labels/?datasource=tranquility",function(data,status,xhr) {
             data.labels.forEach(function(element){
                 labels[element.label_id]=element.name;
             });
         });
         
-        $.getJSON("https://esi.tech.ccp.is/latest/characters/"+characterId+"/mail/lists/?datasource=tranquility",function(data,status,xhr) {
+        $.getJSON("https://esi.evetech.net/latest/characters/"+characterId+"/mail/lists/?datasource=tranquility",function(data,status,xhr) {
             data.forEach(function(element){
                 mailingLists[element.mailing_list_id]=element.name;
                 characterlist[element.mailing_list_id]=element.name;
@@ -322,7 +401,7 @@ String.prototype.cleanup = function() {
 
     function displayMail(mailid){
 
-        $.getJSON("https://esi.tech.ccp.is/v1/characters/"+characterId+"/mail/"+mailid+"/",function(data,status,xhr) {
+        $.getJSON("https://esi.evetech.net/v1/characters/"+characterId+"/mail/"+mailid+"/",function(data,status,xhr) {
             idlist=[];
             individualLookup=[];
             data.recipients.forEach(function(element) {
@@ -401,7 +480,7 @@ String.prototype.cleanup = function() {
 
 
 
-        $.ajax({url:"https://esi.tech.ccp.is/v1/characters/"+characterId+"/mail/?datasource=tranquility",data:JSON.stringify(data),success:function(data,status,xhr){
+        $.ajax({url:"https://esi.evetech.net/v1/characters/"+characterId+"/mail/?datasource=tranquility",data:JSON.stringify(data),success:function(data,status,xhr){
             alert("Mail sent Successfully");
         $("#mailentry").hide();
         $("#mailentrytext").val('');
@@ -436,7 +515,7 @@ String.prototype.cleanup = function() {
 
     function findRecipient() {
         charstring=encodeURIComponent($("#nameFragment").val());
-        $.getJSON("https://esi.tech.ccp.is/latest/search/?categories=character&search="+charstring,function(data,status,xhr) {
+        $.getJSON("https://esi.evetech.net/latest/search/?categories=character&search="+charstring,function(data,status,xhr) {
             singleLookup(data.character);
             data.character.forEach(function(element) {
                 $('#selectRecipient').append("<option value='"+element+"'>"+characterlist[element]+"</option>");
